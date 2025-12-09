@@ -3,41 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Học Từ Vựng 600 Essential Words</title>
+    <title>Học Từ Vựng 600 Essential Words (V6 Quiz)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
-        :root { --primary-color: #2196F3; --bg-color: #f0f2f5; --card-height: 400px; }
+        :root { --primary-color: #2196F3; --accent-color: #ff9800; --bg-color: #f0f2f5; --card-height: 400px; --correct-color: #4CAF50; --wrong-color: #f44336; }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
         h1 { color: #333; margin-bottom: 20px; text-align: center; font-size: 1.5rem;}
         
-        /* Controls Area */
-        .controls {
-            background: white; padding: 15px; border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;
-            width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 10px;
-        }
+        .container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
+
+        /* Controls */
+        .controls { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 12px; }
+        select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; width: 100%; font-size: 1rem; outline: none;}
         
         /* Status Bar */
         .status-bar { padding: 10px; border-radius: 8px; font-size: 0.9em; text-align: center; display: none;}
         .status-error { background-color: #ffebee; color: #c62828; display: block; }
         .status-success { background-color: #e8f5e9; color: #2e7d32; display: block; }
 
-        /* Manual Upload Section (Backup) */
-        #backupSection { display: none; border-top: 1px dashed #ddd; padding-top: 10px; margin-top: 5px;}
-        #backupSection label { font-weight: bold; font-size: 0.9em; display: block; margin-bottom: 5px; color: #555; }
-        input[type="file"] { font-size: 0.9em; width: 100%; }
+        /* Mode Switcher Tabs */
+        .mode-tabs { display: flex; background: #e3f2fd; border-radius: 10px; padding: 5px; margin-bottom: 10px; }
+        .tab-btn { flex: 1; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; color: #555; background: transparent; transition: 0.3s; }
+        .tab-btn.active { background: white; color: var(--primary-color); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
-        select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; width: 100%; font-size: 1rem; outline: none; margin-top: 5px;}
-        
-        /* Flashcard Styling */
-        .card-container { perspective: 1000px; width: 100%; max-width: 500px; height: var(--card-height); cursor: pointer; position: relative; }
+        /* --- FLASHCARD STYLES --- */
+        #flashcardSection { display: block; }
+        .card-container { perspective: 1000px; width: 100%; height: var(--card-height); cursor: pointer; position: relative; }
         .card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s; box-shadow: 0 8px 16px rgba(0,0,0,0.1); border-radius: 20px; }
         .card.is-flipped { transform: rotateY(180deg); }
         .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 20px; padding: 20px; box-sizing: border-box; text-align: center; }
         .card-front { background-color: white; color: #333; }
         .card-back { background-color: var(--primary-color); color: white; transform: rotateY(180deg); overflow-y: auto;}
 
-        /* Typography */
         .word-text { font-size: 2.2em; font-weight: 700; margin: 10px 0; color: var(--primary-color); }
         .ipa-text { font-style: italic; color: #777; margin-bottom: 20px; }
         .type-text { background: #e3f2fd; color: var(--primary-color); padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;}
@@ -45,203 +42,358 @@
         .definition-text { font-style: italic; margin-bottom: 15px; opacity: 0.95; font-size: 0.95em;}
         .example-box { background: rgba(255,255,255,0.15); padding: 15px; border-radius: 12px; font-size: 0.95em; margin-top: 10px; width: 100%; text-align: left; line-height: 1.4;}
 
-        /* Audio Button */
+        /* --- QUIZ STYLES --- */
+        #quizSection { display: none; background: white; border-radius: 20px; padding: 20px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); min-height: 400px; flex-direction: column; justify-content: center; align-items: center; text-align: center;}
+        .quiz-word { font-size: 2em; font-weight: bold; color: var(--primary-color); margin-bottom: 20px; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+        .option-btn { background: #f9f9f9; border: 2px solid #eee; padding: 15px; border-radius: 10px; cursor: pointer; font-size: 1rem; transition: 0.2s; color: #444; min-height: 60px; display: flex; align-items: center; justify-content: center;}
+        .option-btn:hover { background: #f0f8ff; border-color: #bbdefb; }
+        
+        .option-btn.correct { background: var(--correct-color); color: white; border-color: var(--correct-color); }
+        .option-btn.wrong { background: var(--wrong-color); color: white; border-color: var(--wrong-color); }
+        .quiz-score { font-weight: bold; color: #666; margin-top: 20px; }
+        .quiz-feedback { margin-top: 10px; font-weight: bold; height: 24px; }
+
+        /* General UI */
         .btn-audio { background-color: #fff; color: var(--primary-color); border: 2px solid #eee; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; font-size: 1.2em; cursor: pointer; transition: 0.2s; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .btn-audio:hover { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
         .btn-audio-sm { width: 35px; height: 35px; background: rgba(255,255,255,0.2); color: white; border: none; margin: 0 auto 10px auto; }
 
-        /* Nav Buttons */
-        .nav-buttons { display: flex; justify-content: space-between; width: 100%; max-width: 500px; margin-top: 25px; gap: 15px; }
+        .nav-buttons { display: flex; justify-content: space-between; width: 100%; margin-top: 15px; gap: 15px; }
         .main-btn { flex: 1; background-color: var(--primary-color); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 6px rgba(33, 150, 243, 0.3); transition: 0.2s;}
-        .main-btn:active { transform: translateY(2px); }
         .main-btn:disabled { background-color: #ccc; box-shadow: none; cursor: default; }
-        .progress { margin-top: 15px; color: #888; font-size: 0.9rem; }
+        
+        #backupSection { display: none; border-top: 1px dashed #ddd; padding-top: 10px; margin-top: 10px;}
+        .toggle-container { display: flex; align-items: center; justify-content: space-between; background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-color); }
+        input:checked + .slider:before { transform: translateX(18px); }
 
-        @media (max-width: 600px) { :root { --card-height: 480px; } .word-text { font-size: 2em; } }
+        @media (max-width: 600px) { :root { --card-height: 480px; } .word-text { font-size: 2em; } .options-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-    <h1>📚 Từ Vựng Essential Words</h1>
+    <h1>📚 Essential Words Master</h1>
 
-    <div class="controls">
-        <div id="statusMessage" class="status-bar">Đang tải dữ liệu...</div>
-
-        <div id="sheetSelectorContainer" style="display:none;">
-            <label for="sheetSelect" style="color: #555; font-weight: 600;">Chủ đề:</label>
-            <select id="sheetSelect"></select>
+    <div class="container">
+        <div class="mode-tabs">
+            <button class="tab-btn active" onclick="switchMode('flashcard')" id="tabFlashcard">📖 Học Flashcard</button>
+            <button class="tab-btn" onclick="switchMode('quiz')" id="tabQuiz">🧩 Trắc nghiệm</button>
         </div>
 
-        <div id="backupSection">
-            <label for="backupUpload">📂 Chọn file thủ công (Dự phòng):</label>
-            <input type="file" id="backupUpload" accept=".xlsx, .xls" />
-        </div>
-        
-        <div style="text-align: center; margin-top: 5px;">
-            <a href="#" onclick="toggleBackup(); return false;" style="font-size: 0.8em; color: #999; text-decoration: none;">(Không thấy dữ liệu? Bấm vào đây)</a>
-        </div>
-    </div>
+        <div class="controls">
+            <div id="statusMessage" class="status-bar">Đang tải...</div>
 
-    <div class="card-container" onclick="flipCard()">
-        <div class="card" id="flashcard">
-            <div class="card-face card-front">
-                <div class="type-text" id="wordForm">Type</div>
-                <div class="word-text" id="wordNew">...</div>
-                <button class="btn-audio" onclick="playAudio(event, 'word')">🔊</button>
-                <div class="ipa-text" id="wordIPA"></div>
-                <div style="font-size: 0.85em; color: #999; margin-top: auto;">(Chạm để xem nghĩa)</div>
+            <div id="sheetSelectorContainer" style="display:none;">
+                <label style="font-weight:600; color:#555; font-size:0.9em;">Chủ đề:</label>
+                <select id="sheetSelect"></select>
             </div>
-            <div class="card-face card-back">
-                <div class="meaning-text" id="wordMean">Meaning</div>
-                <button class="btn-audio btn-audio-sm" onclick="playAudio(event, 'sentence')">🔊</button>
-                <div class="definition-text" id="wordDef"></div>
-                <div class="example-box">
-                    <strong style="display:block; margin-bottom:5px;">Ví dụ:</strong>
-                    <span id="wordSentence"></span>
+
+            <div id="flashcardControls">
+                <div class="toggle-container">
+                    <span style="font-size:0.9em; font-weight:600; color:#444;">🔀 Trộn từ (Random)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="randomToggle" onchange="toggleRandomMode()">
+                        <span class="slider"></span>
+                    </label>
                 </div>
             </div>
+
+            <div id="backupSection">
+                <label style="font-size:0.9em; font-weight:bold; color:#555;">📂 Chọn file Excel:</label>
+                <input type="file" id="backupUpload" accept=".xlsx, .xls" style="margin-top:5px; width:100%"/>
+            </div>
+            <div style="text-align: center;">
+                <a href="#" onclick="toggleBackup(); return false;" style="font-size: 0.8em; color: #999; text-decoration: none;">(Không thấy dữ liệu? Bấm đây)</a>
+            </div>
         </div>
-    </div>
 
-    <div class="progress" id="progressText">0 / 0</div>
+        <div id="flashcardSection">
+            <div class="card-container" onclick="flipCard()">
+                <div class="card" id="flashcard">
+                    <div class="card-face card-front">
+                        <div class="type-text" id="wordForm">Type</div>
+                        <div class="word-text" id="wordNew">...</div>
+                        <button class="btn-audio" onclick="playAudio(event, 'word')">🔊</button>
+                        <div class="ipa-text" id="wordIPA"></div>
+                        <div style="font-size: 0.85em; color: #999; margin-top: auto;">(Chạm để xem nghĩa)</div>
+                    </div>
+                    <div class="card-face card-back">
+                        <div class="meaning-text" id="wordMean">Meaning</div>
+                        <button class="btn-audio btn-audio-sm" onclick="playAudio(event, 'sentence')">🔊</button>
+                        <div class="definition-text" id="wordDef"></div>
+                        <div class="example-box">
+                            <strong style="display:block; margin-bottom:5px;">Ví dụ:</strong>
+                            <span id="wordSentence"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="progress" id="progressText" style="text-align:center; color:#888; margin-top:10px;">0 / 0</div>
+            <div class="nav-buttons">
+                <button class="main-btn" id="btnPrev" onclick="prevCard()">&#8592; Trước</button>
+                <button class="main-btn" id="btnNext" onclick="nextCard()">Sau &#8594;</button>
+            </div>
+        </div>
 
-    <div class="nav-buttons">
-        <button class="main-btn" id="btnPrev" onclick="prevCard()">&#8592; Trước</button>
-        <button class="main-btn" id="btnNext" onclick="nextCard()">Sau &#8594;</button>
+        <div id="quizSection">
+            <div style="font-size: 0.9em; color: #888; margin-bottom: 10px;">Chọn nghĩa đúng của từ:</div>
+            <div class="quiz-word" id="quizWord">WORD</div>
+            <button class="btn-audio" style="margin-bottom: 20px;" onclick="playAudio(event, 'quiz')">🔊</button>
+            
+            <div class="options-grid" id="quizOptions">
+                </div>
+
+            <div class="quiz-feedback" id="quizFeedback"></div>
+            <div class="quiz-score" id="quizScore">Điểm: 0</div>
+            
+            <button class="main-btn" onclick="generateQuiz()" style="margin-top: 20px; background: #607d8b;">Câu tiếp theo &#8594;</button>
+        </div>
+
     </div>
 
     <script>
-        // CẤU HÌNH TÊN FILE EXCEL (Phải đúng từng chữ cái hoa/thường)
         const EXCEL_FILE_NAME = "600 Essential Words.xlsx"; 
 
         let workbook = null;
-        let currentData = [];
+        let originalData = []; 
+        let displayData = [];  
         let currentIndex = 0;
-        const cardElement = document.getElementById('flashcard');
+        
+        // Quiz variables
+        let currentQuizItem = null;
+        let quizScore = 0;
+
         const synth = window.speechSynthesis;
         const statusMsg = document.getElementById('statusMessage');
 
-        // 1. Tự động chạy khi mở trang
+        // --- INIT ---
         window.addEventListener('DOMContentLoaded', async () => {
             await loadExcelFromGitHub();
         });
 
-        // 2. Xử lý khi chọn file thủ công (Backup)
+        // --- TABS LOGIC ---
+        function switchMode(mode) {
+            document.getElementById('tabFlashcard').className = mode === 'flashcard' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('tabQuiz').className = mode === 'quiz' ? 'tab-btn active' : 'tab-btn';
+            
+            document.getElementById('flashcardSection').style.display = mode === 'flashcard' ? 'block' : 'none';
+            document.getElementById('flashcardControls').style.display = mode === 'flashcard' ? 'block' : 'none';
+            document.getElementById('quizSection').style.display = mode === 'quiz' ? 'flex' : 'none';
+
+            if (mode === 'quiz') {
+                generateQuiz();
+            }
+        }
+
+        // --- DATA LOADING ---
         document.getElementById('backupUpload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-            
             const reader = new FileReader();
             reader.onload = function(e) {
                 const data = new Uint8Array(e.target.result);
                 processWorkbook(XLSX.read(data, {type: 'array'}));
-                showMessage("Đã tải file thủ công thành công!", "success");
+                showMessage("Đã tải file thành công!", "success");
             };
             reader.readAsArrayBuffer(file);
         });
 
-        // 3. Hàm tải từ GitHub (Hoặc Server)
+        document.getElementById('sheetSelect').addEventListener('change', (e) => loadSheet(e.target.value));
+
         async function loadExcelFromGitHub() {
-            showMessage("Đang thử tải file tự động...", "");
+            showMessage("Đang tìm file dữ liệu...", "");
             try {
-                // Thêm timestamp để tránh cache
                 const url = `${EXCEL_FILE_NAME}?t=${new Date().getTime()}`;
                 const response = await fetch(url);
-                
-                if (!response.ok) throw new Error("Không tìm thấy file trên server.");
-
+                if (!response.ok) throw new Error("Not found");
                 const arrayBuffer = await response.arrayBuffer();
                 processWorkbook(XLSX.read(arrayBuffer, {type: 'array'}));
-                showMessage("Đã tự động tải dữ liệu!", "success");
-                
+                showMessage("Đã tải dữ liệu!", "success");
             } catch (error) {
-                console.warn("Auto-load failed:", error);
-                // Nếu lỗi, hiện thông báo và mở phần upload thủ công
-                showMessage("Không thể tự tải file. Hãy chọn file thủ công bên dưới.", "error");
+                console.warn("Auto-load failed");
+                showMessage("Không tìm thấy file tự động. Hãy chọn bên dưới.", "error");
                 document.getElementById('backupSection').style.display = 'block';
             }
         }
 
-        // 4. Xử lý Workbook (Dùng chung cho cả 2 cách)
         function processWorkbook(wb) {
             workbook = wb;
             const sheetSelect = document.getElementById('sheetSelect');
             sheetSelect.innerHTML = "";
-            
             workbook.SheetNames.forEach(sheetName => {
                 const option = document.createElement('option');
                 option.value = sheetName;
                 option.text = sheetName;
                 sheetSelect.appendChild(option);
             });
-            
             document.getElementById('sheetSelectorContainer').style.display = 'block';
             loadSheet(workbook.SheetNames[0]);
         }
 
-        function showMessage(msg, type) {
-            statusMsg.innerText = msg;
-            statusMsg.className = 'status-bar ' + (type === 'error' ? 'status-error' : type === 'success' ? 'status-success' : '');
-            statusMsg.style.display = 'block';
-        }
-
-        function toggleBackup() {
-            const sec = document.getElementById('backupSection');
-            sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
-        }
-
-        // --- Các hàm logic hiển thị Flashcard (Giữ nguyên) ---
-        document.getElementById('sheetSelect').addEventListener('change', (e) => loadSheet(e.target.value));
-
         function loadSheet(sheetName) {
             const worksheet = workbook.Sheets[sheetName];
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
-            currentData = jsonData.filter(row => row['New word']);
+            originalData = jsonData.filter(row => row['New word']);
             
-            if (currentData.length > 0) {
+            if (originalData.length > 0) {
+                const isRandom = document.getElementById('randomToggle').checked;
+                displayData = [...originalData];
+                if (isRandom) shuffleArray(displayData);
+                
                 currentIndex = 0;
                 renderCard();
                 updateButtons();
+                // Reset Quiz Score when changing sheet
+                quizScore = 0;
+                document.getElementById('quizScore').innerText = "Điểm: 0";
             } else {
                 alert("Sheet này chưa có từ vựng!");
             }
         }
 
-        function renderCard() {
-            if (currentData.length === 0) return;
-            const item = currentData[currentIndex];
-            cardElement.classList.remove('is-flipped');
+        // --- FLASHCARD FUNCTIONS ---
+        function toggleRandomMode() {
+            const isRandom = document.getElementById('randomToggle').checked;
+            displayData = [...originalData];
+            if (isRandom) shuffleArray(displayData);
+            currentIndex = 0;
+            renderCard();
+            updateButtons();
+        }
 
-            // Map data an toàn (xử lý trường hợp thiếu cột)
+        function renderCard() {
+            if (displayData.length === 0) return;
+            const item = displayData[currentIndex];
+            const card = document.getElementById('flashcard');
+            card.classList.remove('is-flipped');
+
             document.getElementById('wordNew').innerText = item['New word'] || '...';
             document.getElementById('wordForm').innerText = item['Word form'] || '';
             document.getElementById('wordIPA').innerText = item['IPA'] ? `${item['IPA']}` : '';
             document.getElementById('wordMean').innerText = item['Mean'] || '...';
             document.getElementById('wordDef').innerText = item['Definition'] || '';
             document.getElementById('wordSentence').innerText = item['Original Sentencs'] || '...';
+            document.getElementById('progressText').innerText = `Thẻ ${currentIndex + 1} / ${displayData.length}`;
+        }
 
-            document.getElementById('progressText').innerText = `Thẻ ${currentIndex + 1} / ${currentData.length}`;
+        function flipCard() { document.getElementById('flashcard').classList.toggle('is-flipped'); }
+        function nextCard() { if (currentIndex < displayData.length - 1) { setTimeout(() => { currentIndex++; renderCard(); updateButtons(); }, 200); } }
+        function prevCard() { if (currentIndex > 0) { setTimeout(() => { currentIndex--; renderCard(); updateButtons(); }, 200); } }
+        function updateButtons() {
+            document.getElementById('btnPrev').disabled = (currentIndex === 0);
+            document.getElementById('btnNext').disabled = (currentIndex === displayData.length - 1);
+        }
+
+        // --- QUIZ FUNCTIONS (MỚI) ---
+        function generateQuiz() {
+            if (originalData.length < 4) {
+                document.getElementById('quizWord').innerText = "Cần ít nhất 4 từ vựng để tạo Quiz!";
+                return;
+            }
+
+            // Reset UI
+            document.getElementById('quizFeedback').innerText = "";
+            document.getElementById('quizFeedback').style.color = "#333";
+            
+            // 1. Pick 1 correct word randomly
+            const correctIndex = Math.floor(Math.random() * originalData.length);
+            currentQuizItem = originalData[correctIndex];
+
+            // 2. Pick 3 distractors (wrong answers)
+            let options = [currentQuizItem];
+            while (options.length < 4) {
+                let randomItem = originalData[Math.floor(Math.random() * originalData.length)];
+                // Check duplicate (avoid having same word twice)
+                if (!options.includes(randomItem)) {
+                    options.push(randomItem);
+                }
+            }
+
+            // 3. Shuffle options
+            shuffleArray(options);
+
+            // 4. Render
+            document.getElementById('quizWord').innerText = currentQuizItem['New word'];
+            
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = "";
+
+            options.forEach(opt => {
+                const btn = document.createElement('div');
+                btn.className = 'option-btn';
+                btn.innerText = opt['Mean'] || "N/A"; // Show Vietnamese Meaning
+                btn.onclick = () => checkAnswer(opt, btn);
+                optionsContainer.appendChild(btn);
+            });
+            
+            // Auto play audio (optional - remove if annoying)
+            // playAudio(null, 'quiz'); 
+        }
+
+        function checkAnswer(selectedItem, btnElement) {
+            // Prevent multiple clicks
+            if (document.getElementById('quizFeedback').innerText !== "") return;
+
+            const isCorrect = selectedItem['New word'] === currentQuizItem['New word'];
+            
+            if (isCorrect) {
+                btnElement.classList.add('correct');
+                document.getElementById('quizFeedback').innerText = "Chính xác! 🎉";
+                document.getElementById('quizFeedback').style.color = "green";
+                quizScore += 10;
+                playAudio(null, 'quiz'); // Read word when correct
+            } else {
+                btnElement.classList.add('wrong');
+                document.getElementById('quizFeedback').innerText = `Sai rồi! Đáp án đúng là: ${currentQuizItem['Mean']}`;
+                document.getElementById('quizFeedback').style.color = "red";
+                
+                // Highlight correct one
+                const allBtns = document.querySelectorAll('.option-btn');
+                allBtns.forEach(b => {
+                    if (b.innerText === currentQuizItem['Mean']) b.classList.add('correct');
+                });
+            }
+            document.getElementById('quizScore').innerText = `Điểm: ${quizScore}`;
+        }
+
+        // --- UTILS ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
         }
 
         function playAudio(event, type) {
-            event.stopPropagation();
+            if(event) event.stopPropagation();
             if (synth.speaking) synth.cancel();
-            const item = currentData[currentIndex];
-            let text = (type === 'word') ? item['New word'] : item['Original Sentencs'];
+            
+            let text = "";
+            if (type === 'word') text = displayData[currentIndex]['New word'];
+            else if (type === 'sentence') text = displayData[currentIndex]['Original Sentencs'];
+            else if (type === 'quiz') text = currentQuizItem['New word'];
+
             if (text) {
                 const utterThis = new SpeechSynthesisUtterance(text);
                 utterThis.lang = 'en-US';
-                utterThis.rate = 0.9;
                 synth.speak(utterThis);
             }
         }
 
-        function flipCard() { cardElement.classList.toggle('is-flipped'); }
-        function nextCard() { if (currentIndex < currentData.length - 1) { setTimeout(() => { currentIndex++; renderCard(); updateButtons(); }, 200); } }
-        function prevCard() { if (currentIndex > 0) { setTimeout(() => { currentIndex--; renderCard(); updateButtons(); }, 200); } }
-        function updateButtons() {
-            document.getElementById('btnPrev').disabled = (currentIndex === 0);
-            document.getElementById('btnNext').disabled = (currentIndex === currentData.length - 1);
+        function showMessage(msg, type) {
+            statusMsg.innerText = msg;
+            statusMsg.className = 'status-bar ' + (type === 'error' ? 'status-error' : type === 'success' ? 'status-success' : '');
+            statusMsg.style.display = 'block';
+            if(type === 'success') setTimeout(() => { statusMsg.style.display = 'none'; }, 3000);
+        }
+        function toggleBackup() {
+            const sec = document.getElementById('backupSection');
+            sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
         }
     </script>
 </body>
