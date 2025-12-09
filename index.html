@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Học Từ Vựng 600 Essential Words</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root { --primary-color: #2196F3; --bg-color: #f0f2f5; --card-height: 400px; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        h1 { color: #333; margin-bottom: 20px; text-align: center; font-size: 1.5rem;}
+        
+        /* Controls Area */
+        .controls {
+            background: white; padding: 15px; border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px;
+            width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 10px;
+        }
+        
+        /* Status Bar */
+        .status-bar { padding: 10px; border-radius: 8px; font-size: 0.9em; text-align: center; display: none;}
+        .status-error { background-color: #ffebee; color: #c62828; display: block; }
+        .status-success { background-color: #e8f5e9; color: #2e7d32; display: block; }
+
+        /* Manual Upload Section (Backup) */
+        #backupSection { display: none; border-top: 1px dashed #ddd; padding-top: 10px; margin-top: 5px;}
+        #backupSection label { font-weight: bold; font-size: 0.9em; display: block; margin-bottom: 5px; color: #555; }
+        input[type="file"] { font-size: 0.9em; width: 100%; }
+
+        select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; width: 100%; font-size: 1rem; outline: none; margin-top: 5px;}
+        
+        /* Flashcard Styling */
+        .card-container { perspective: 1000px; width: 100%; max-width: 500px; height: var(--card-height); cursor: pointer; position: relative; }
+        .card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s; box-shadow: 0 8px 16px rgba(0,0,0,0.1); border-radius: 20px; }
+        .card.is-flipped { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 20px; padding: 20px; box-sizing: border-box; text-align: center; }
+        .card-front { background-color: white; color: #333; }
+        .card-back { background-color: var(--primary-color); color: white; transform: rotateY(180deg); overflow-y: auto;}
+
+        /* Typography */
+        .word-text { font-size: 2.2em; font-weight: 700; margin: 10px 0; color: var(--primary-color); }
+        .ipa-text { font-style: italic; color: #777; margin-bottom: 20px; }
+        .type-text { background: #e3f2fd; color: var(--primary-color); padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: 600;}
+        .meaning-text { font-size: 1.6em; font-weight: bold; margin-bottom: 15px; line-height: 1.3;}
+        .definition-text { font-style: italic; margin-bottom: 15px; opacity: 0.95; font-size: 0.95em;}
+        .example-box { background: rgba(255,255,255,0.15); padding: 15px; border-radius: 12px; font-size: 0.95em; margin-top: 10px; width: 100%; text-align: left; line-height: 1.4;}
+
+        /* Audio Button */
+        .btn-audio { background-color: #fff; color: var(--primary-color); border: 2px solid #eee; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; font-size: 1.2em; cursor: pointer; transition: 0.2s; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .btn-audio:hover { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .btn-audio-sm { width: 35px; height: 35px; background: rgba(255,255,255,0.2); color: white; border: none; margin: 0 auto 10px auto; }
+
+        /* Nav Buttons */
+        .nav-buttons { display: flex; justify-content: space-between; width: 100%; max-width: 500px; margin-top: 25px; gap: 15px; }
+        .main-btn { flex: 1; background-color: var(--primary-color); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 4px 6px rgba(33, 150, 243, 0.3); transition: 0.2s;}
+        .main-btn:active { transform: translateY(2px); }
+        .main-btn:disabled { background-color: #ccc; box-shadow: none; cursor: default; }
+        .progress { margin-top: 15px; color: #888; font-size: 0.9rem; }
+
+        @media (max-width: 600px) { :root { --card-height: 480px; } .word-text { font-size: 2em; } }
+    </style>
+</head>
+<body>
+
+    <h1>📚 Từ Vựng Essential Words</h1>
+
+    <div class="controls">
+        <div id="statusMessage" class="status-bar">Đang tải dữ liệu...</div>
+
+        <div id="sheetSelectorContainer" style="display:none;">
+            <label for="sheetSelect" style="color: #555; font-weight: 600;">Chủ đề:</label>
+            <select id="sheetSelect"></select>
+        </div>
+
+        <div id="backupSection">
+            <label for="backupUpload">📂 Chọn file thủ công (Dự phòng):</label>
+            <input type="file" id="backupUpload" accept=".xlsx, .xls" />
+        </div>
+        
+        <div style="text-align: center; margin-top: 5px;">
+            <a href="#" onclick="toggleBackup(); return false;" style="font-size: 0.8em; color: #999; text-decoration: none;">(Không thấy dữ liệu? Bấm vào đây)</a>
+        </div>
+    </div>
+
+    <div class="card-container" onclick="flipCard()">
+        <div class="card" id="flashcard">
+            <div class="card-face card-front">
+                <div class="type-text" id="wordForm">Type</div>
+                <div class="word-text" id="wordNew">...</div>
+                <button class="btn-audio" onclick="playAudio(event, 'word')">🔊</button>
+                <div class="ipa-text" id="wordIPA"></div>
+                <div style="font-size: 0.85em; color: #999; margin-top: auto;">(Chạm để xem nghĩa)</div>
+            </div>
+            <div class="card-face card-back">
+                <div class="meaning-text" id="wordMean">Meaning</div>
+                <button class="btn-audio btn-audio-sm" onclick="playAudio(event, 'sentence')">🔊</button>
+                <div class="definition-text" id="wordDef"></div>
+                <div class="example-box">
+                    <strong style="display:block; margin-bottom:5px;">Ví dụ:</strong>
+                    <span id="wordSentence"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="progress" id="progressText">0 / 0</div>
+
+    <div class="nav-buttons">
+        <button class="main-btn" id="btnPrev" onclick="prevCard()">&#8592; Trước</button>
+        <button class="main-btn" id="btnNext" onclick="nextCard()">Sau &#8594;</button>
+    </div>
+
+    <script>
+        // CẤU HÌNH TÊN FILE EXCEL (Phải đúng từng chữ cái hoa/thường)
+        const EXCEL_FILE_NAME = "600 Essential Words.xlsx"; 
+
+        let workbook = null;
+        let currentData = [];
+        let currentIndex = 0;
+        const cardElement = document.getElementById('flashcard');
+        const synth = window.speechSynthesis;
+        const statusMsg = document.getElementById('statusMessage');
+
+        // 1. Tự động chạy khi mở trang
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadExcelFromGitHub();
+        });
+
+        // 2. Xử lý khi chọn file thủ công (Backup)
+        document.getElementById('backupUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                processWorkbook(XLSX.read(data, {type: 'array'}));
+                showMessage("Đã tải file thủ công thành công!", "success");
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // 3. Hàm tải từ GitHub (Hoặc Server)
+        async function loadExcelFromGitHub() {
+            showMessage("Đang thử tải file tự động...", "");
+            try {
+                // Thêm timestamp để tránh cache
+                const url = `${EXCEL_FILE_NAME}?t=${new Date().getTime()}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) throw new Error("Không tìm thấy file trên server.");
+
+                const arrayBuffer = await response.arrayBuffer();
+                processWorkbook(XLSX.read(arrayBuffer, {type: 'array'}));
+                showMessage("Đã tự động tải dữ liệu!", "success");
+                
+            } catch (error) {
+                console.warn("Auto-load failed:", error);
+                // Nếu lỗi, hiện thông báo và mở phần upload thủ công
+                showMessage("Không thể tự tải file. Hãy chọn file thủ công bên dưới.", "error");
+                document.getElementById('backupSection').style.display = 'block';
+            }
+        }
+
+        // 4. Xử lý Workbook (Dùng chung cho cả 2 cách)
+        function processWorkbook(wb) {
+            workbook = wb;
+            const sheetSelect = document.getElementById('sheetSelect');
+            sheetSelect.innerHTML = "";
+            
+            workbook.SheetNames.forEach(sheetName => {
+                const option = document.createElement('option');
+                option.value = sheetName;
+                option.text = sheetName;
+                sheetSelect.appendChild(option);
+            });
+            
+            document.getElementById('sheetSelectorContainer').style.display = 'block';
+            loadSheet(workbook.SheetNames[0]);
+        }
+
+        function showMessage(msg, type) {
+            statusMsg.innerText = msg;
+            statusMsg.className = 'status-bar ' + (type === 'error' ? 'status-error' : type === 'success' ? 'status-success' : '');
+            statusMsg.style.display = 'block';
+        }
+
+        function toggleBackup() {
+            const sec = document.getElementById('backupSection');
+            sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // --- Các hàm logic hiển thị Flashcard (Giữ nguyên) ---
+        document.getElementById('sheetSelect').addEventListener('change', (e) => loadSheet(e.target.value));
+
+        function loadSheet(sheetName) {
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+            currentData = jsonData.filter(row => row['New word']);
+            
+            if (currentData.length > 0) {
+                currentIndex = 0;
+                renderCard();
+                updateButtons();
+            } else {
+                alert("Sheet này chưa có từ vựng!");
+            }
+        }
+
+        function renderCard() {
+            if (currentData.length === 0) return;
+            const item = currentData[currentIndex];
+            cardElement.classList.remove('is-flipped');
+
+            // Map data an toàn (xử lý trường hợp thiếu cột)
+            document.getElementById('wordNew').innerText = item['New word'] || '...';
+            document.getElementById('wordForm').innerText = item['Word form'] || '';
+            document.getElementById('wordIPA').innerText = item['IPA'] ? `${item['IPA']}` : '';
+            document.getElementById('wordMean').innerText = item['Mean'] || '...';
+            document.getElementById('wordDef').innerText = item['Definition'] || '';
+            document.getElementById('wordSentence').innerText = item['Original Sentencs'] || '...';
+
+            document.getElementById('progressText').innerText = `Thẻ ${currentIndex + 1} / ${currentData.length}`;
+        }
+
+        function playAudio(event, type) {
+            event.stopPropagation();
+            if (synth.speaking) synth.cancel();
+            const item = currentData[currentIndex];
+            let text = (type === 'word') ? item['New word'] : item['Original Sentencs'];
+            if (text) {
+                const utterThis = new SpeechSynthesisUtterance(text);
+                utterThis.lang = 'en-US';
+                utterThis.rate = 0.9;
+                synth.speak(utterThis);
+            }
+        }
+
+        function flipCard() { cardElement.classList.toggle('is-flipped'); }
+        function nextCard() { if (currentIndex < currentData.length - 1) { setTimeout(() => { currentIndex++; renderCard(); updateButtons(); }, 200); } }
+        function prevCard() { if (currentIndex > 0) { setTimeout(() => { currentIndex--; renderCard(); updateButtons(); }, 200); } }
+        function updateButtons() {
+            document.getElementById('btnPrev').disabled = (currentIndex === 0);
+            document.getElementById('btnNext').disabled = (currentIndex === currentData.length - 1);
+        }
+    </script>
+</body>
+</html>
